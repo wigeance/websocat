@@ -1,4 +1,4 @@
-name: Build websocat (mipsel via cross)
+name: Build websocat (mipsel via cross custom)
 
 on:
   workflow_dispatch:
@@ -12,19 +12,24 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Rust (latest)
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Build for mipsel (musl)
+      - name: Create Cross.toml
+        run: |
+          cat > Cross.toml <<'EOF'
+          [target.mipsel-unknown-linux-musl]
+          image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
+          EOF
+
+      - name: Build (mipsel static)
         run: cross build --release --target mipsel-unknown-linux-musl
 
       - name: Show binary info
-        run: |
-          file target/mipsel-unknown-linux-musl/release/websocat || true
-          ls -lh target/mipsel-unknown-linux-musl/release/
+        run: file target/mipsel-unknown-linux-musl/release/websocat || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
