@@ -1,41 +1,33 @@
-name: Build websocat (mipsel-musl)
+name: Build websocat (mipsel via cross)
 
 on:
+  workflow_dispatch:
   push:
     branches: [ master ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Rust
+      - name: Setup Rust (latest)
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: mipsel-unknown-linux-musl
 
-      - name: Install musl cross toolchain
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build for mipsel (musl)
+        run: cross build --release --target mipsel-unknown-linux-musl
+
+      - name: Show binary info
         run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools gcc-mipsel-linux-gnu
-
-      - name: Configure cargo linker
-        run: |
-          mkdir -p .cargo
-          echo '[target.mipsel-unknown-linux-musl]' > .cargo/config.toml
-          echo 'linker = "mipsel-linux-gnu-gcc"' >> .cargo/config.toml
-
-      - name: Build release (static)
-        run: cargo build --release --target mipsel-unknown-linux-musl
-
-      - name: Strip binary
-        run: mipsel-linux-gnu-strip target/mipsel-unknown-linux-musl/release/websocat
+          file target/mipsel-unknown-linux-musl/release/websocat || true
+          ls -lh target/mipsel-unknown-linux-musl/release/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: websocat-mipsel-musl
+          name: websocat-mipsel
           path: target/mipsel-unknown-linux-musl/release/websocat
