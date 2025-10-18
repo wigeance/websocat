@@ -1,4 +1,4 @@
-name: Build websocat (mipsel via cross custom)
+name: Build websocat (mipsel-musl via cross, build-std)
 
 on:
   workflow_dispatch:
@@ -18,18 +18,21 @@ jobs:
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
 
-      - name: Create Cross.toml
+      - name: Create Cross.toml (build std)
         run: |
           cat > Cross.toml <<'EOF'
           [target.mipsel-unknown-linux-musl]
           image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
+          build-std = ["std", "core", "alloc", "proc_macro"]
           EOF
 
-      - name: Build (mipsel static)
-        run: cross build --release --target mipsel-unknown-linux-musl
+      - name: Build (release)
+        run: cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl
 
-      - name: Show binary info
-        run: file target/mipsel-unknown-linux-musl/release/websocat || true
+      - name: Strip binary
+        run: |
+          file target/mipsel-unknown-linux-musl/release/websocat || true
+          ls -lh target/mipsel-unknown-linux-musl/release/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
