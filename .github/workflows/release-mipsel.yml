@@ -1,4 +1,4 @@
-name: Build websocat (mipsel via cross + vendored OpenSSL)
+name: Build websocat (mipsel)
 
 on:
   workflow_dispatch:
@@ -11,22 +11,12 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Show project structure
         run: |
           pwd
           ls -la
           find . -name Cargo.toml
-
-      - name: Fetch dependencies
-        run: cargo fetch
-
-      - name: Setup nightly Rust
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: rust-src
 
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross --force
@@ -36,13 +26,10 @@ jobs:
           cat > Cross.toml <<'EOF'
           [target.mipsel-unknown-linux-musl]
           image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
-          build-std = ["core", "alloc", "std", "proc_macro"]
           EOF
 
       - name: Build release
-        env:
-          CROSS_NO_WARNINGS: 1
-        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path $GITHUB_WORKSPACE/Cargo.toml
+        run: cross build --release --target mipsel-unknown-linux-musl
 
       - name: Inspect binary
         run: |
