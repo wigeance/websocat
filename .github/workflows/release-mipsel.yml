@@ -12,18 +12,26 @@ jobs:
       # 1️⃣ Клонируем репозиторий
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # 2️⃣ Устанавливаем nightly Rust (нужен для -Z build-std)
+      # 2️⃣ Проверяем структуру проекта
+      - name: Verify project structure
+        run: |
+          pwd
+          ls -la
+
+      # 3️⃣ Устанавливаем nightly Rust (нужен для -Z build-std)
       - name: Setup nightly Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src
 
-      # 3️⃣ Устанавливаем cross
+      # 4️⃣ Устанавливаем cross (последняя dev версия)
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross --force
 
-      # 4️⃣ Создаём Cross.toml с указанием сборки std
+      # 5️⃣ Создаём Cross.toml с указанием сборки std
       - name: Create Cross.toml
         run: |
           cat > Cross.toml <<'EOF'
@@ -32,19 +40,20 @@ jobs:
           build-std = ["core", "alloc", "std", "proc_macro"]
           EOF
 
-      # 5️⃣ Собираем websocat под mipsel с vendored OpenSSL
+      # 6️⃣ Собираем websocat под mipsel с vendored OpenSSL
       - name: Build release (mipsel, vendored OpenSSL)
+        working-directory: websocat   # <-- если Cargo.toml в подкаталоге websocat
         env:
           CROSS_NO_WARNINGS: 1
         run: cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro
 
-      # 6️⃣ Проверяем результат
+      # 7️⃣ Проверяем бинарник
       - name: Inspect binary
         run: |
           ls -lh target/mipsel-unknown-linux-musl/release/
           file target/mipsel-unknown-linux-musl/release/websocat
 
-      # 7️⃣ Загружаем бинарник как артефакт
+      # 8️⃣ Загружаем бинарник как артефакт
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
