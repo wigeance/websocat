@@ -18,7 +18,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls -la websocat || true
+          find . -name Cargo.toml
 
       - name: Setup nightly Rust
         uses: dtolnay/rust-toolchain@nightly
@@ -39,7 +39,7 @@ jobs:
       - name: Build release
         env:
           CROSS_NO_WARNINGS: 1
-        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path websocat/Cargo.toml
+        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro
 
       - name: Inspect binary
         run: |
