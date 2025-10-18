@@ -1,4 +1,4 @@
-name: Build websocat (mipsel)
+name: Build websocat (mipsel with nightly Rust)
 
 on:
   workflow_dispatch:
@@ -18,18 +18,18 @@ jobs:
           ls -la
           find . -name Cargo.toml
 
-      - name: Install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross --force
-
-      - name: Create Cross.toml
+      - name: Install Rust nightly
         run: |
-          cat > Cross.toml <<'EOF'
-          [target.mipsel-unknown-linux-musl]
-          image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
-          EOF
+          rustup toolchain install nightly
+          rustup target add mipsel-unknown-linux-musl --toolchain nightly
+
+      - name: Fetch dependencies
+        run: cargo fetch
 
       - name: Build release
-        run: cross build --release --target mipsel-unknown-linux-musl
+        env:
+          CARGO_TERM_COLOR: always
+        run: cargo +nightly build --release --target mipsel-unknown-linux-musl -Z build-std=core,alloc,std,proc_macro
 
       - name: Inspect binary
         run: |
