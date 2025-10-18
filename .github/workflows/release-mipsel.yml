@@ -20,6 +20,9 @@ jobs:
           ls -la
           find . -name Cargo.toml
 
+      - name: Fetch dependencies
+        run: cargo fetch
+
       - name: Setup nightly Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -37,10 +40,9 @@ jobs:
           EOF
 
       - name: Build release
-        working-directory: ${{ github.workspace }}
         env:
           CROSS_NO_WARNINGS: 1
-        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro
+        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path $GITHUB_WORKSPACE/Cargo.toml
 
       - name: Inspect binary
         run: |
