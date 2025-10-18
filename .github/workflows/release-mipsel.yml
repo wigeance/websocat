@@ -46,10 +46,11 @@ jobs:
         env:
           CROSS_NO_WARNINGS: 1
         run: |
-          # Если Cargo.toml в корне, используем так:
-          cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro
-          # Если Cargo.toml в подкаталоге `websocat`, раскомментируйте и используйте:
-          # cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path websocat/Cargo.toml
+          # Если Cargo.toml находится в подкаталоге `websocat`, используйте manifest-path
+          cross build --release --target mipsel-unknown-linux-musl \
+            --features=vendored-openssl \
+            -Z build-std=std,core,alloc,proc_macro \
+            --manifest-path websocat/Cargo.toml
 
       # 7️⃣ Проверяем бинарник
       - name: Inspect binary
