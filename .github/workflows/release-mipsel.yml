@@ -37,6 +37,7 @@ jobs:
           EOF
 
       - name: Build release
+        working-directory: ${{ github.workspace }}
         env:
           CROSS_NO_WARNINGS: 1
         run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro
