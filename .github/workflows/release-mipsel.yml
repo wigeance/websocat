@@ -39,10 +39,7 @@ jobs:
       - name: Build release
         env:
           CROSS_NO_WARNINGS: 1
-        run: cross build --release --target mipsel-unknown-linux-musl \
-          --features=vendored-openssl \
-          -Z build-std=std,core,alloc,proc_macro \
-          --manifest-path websocat/Cargo.toml
+        run: cross build --release --target mipsel-unknown-linux-musl --features vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path websocat/Cargo.toml
 
       - name: Inspect binary
         run: |
