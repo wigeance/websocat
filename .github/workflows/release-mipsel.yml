@@ -1,4 +1,4 @@
-name: Build websocat (mipsel-musl via cross, build-std)
+name: Build websocat (mipsel via cross build-std)
 
 on:
   workflow_dispatch:
@@ -15,24 +15,33 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install latest cross (dev branch)
+        run: |
+          cargo install --git https://github.com/cross-rs/cross cross --force
+          cross --version
 
-      - name: Create Cross.toml (build std)
+      - name: Write Cross.toml
         run: |
           cat > Cross.toml <<'EOF'
           [target.mipsel-unknown-linux-musl]
           image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
-          build-std = ["std", "core", "alloc", "proc_macro"]
+          build-std = ["core", "alloc", "std", "proc_macro"]
           EOF
 
-      - name: Build (release)
-        run: cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl
+      - name: Show Cargo metadata (debug aid)
+        run: cargo metadata --no-deps
 
-      - name: Strip binary
+      - name: Build release (mipsel)
+        env:
+          CROSS_DEBUG: 1
+          CROSS_NO_WARNINGS: 1
         run: |
+          cross build --release --target mipsel-unknown-linux-musl
+
+      - name: Inspect result
+        run: |
+          ls -lh target/mipsel-unknown-linux-musl/release/ || true
           file target/mipsel-unknown-linux-musl/release/websocat || true
-          ls -lh target/mipsel-unknown-linux-musl/release/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
