@@ -1,4 +1,4 @@
-name: Build websocat (mipsel-musl, legacy toolchain)
+name: Build websocat (mipsel via cross + vendored OpenSSL)
 
 on:
   workflow_dispatch:
@@ -9,31 +9,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # 1️⃣ Клонируем репозиторий
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      - name: Setup Rust (1.77, supports MIPS)
-        uses: dtolnay/rust-toolchain@1.77.2
+      # 2️⃣ Устанавливаем nightly Rust (нужен для -Z build-std)
+      - name: Setup nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          targets: mipsel-unknown-linux-musl
+          components: rust-src
 
-      - name: Install musl cross toolchain
+      # 3️⃣ Устанавливаем cross
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross --force
+
+      # 4️⃣ Создаём Cross.toml с указанием сборки std
+      - name: Create Cross.toml
         run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools gcc-mipsel-linux-gnu
+          cat > Cross.toml <<'EOF'
+          [target.mipsel-unknown-linux-musl]
+          image = "ghcr.io/cross-rs/mipsel-unknown-linux-musl:edge"
+          build-std = ["core", "alloc", "std", "proc_macro"]
+          EOF
 
-      - name: Configure Cargo linker
+      # 5️⃣ Собираем websocat под mipsel с vendored OpenSSL
+      - name: Build release (mipsel, vendored OpenSSL)
+        env:
+          CROSS_NO_WARNINGS: 1
+        run: cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro
+
+      # 6️⃣ Проверяем результат
+      - name: Inspect binary
         run: |
-          mkdir -p .cargo
-          echo '[target.mipsel-unknown-linux-musl]' > .cargo/config.toml
-          echo 'linker = "mipsel-linux-gnu-gcc"' >> .cargo/config.toml
+          ls -lh target/mipsel-unknown-linux-musl/release/
+          file target/mipsel-unknown-linux-musl/release/websocat
 
-      - name: Build release (static)
-        run: cargo build --release --target mipsel-unknown-linux-musl
-
-      - name: Strip binary
-        run: mipsel-linux-gnu-strip target/mipsel-unknown-linux-musl/release/websocat
-
-      - uses: actions/upload-artifact@v4
+      # 7️⃣ Загружаем бинарник как артефакт
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: websocat-mipsel-musl
+          name: websocat-mipsel
           path: target/mipsel-unknown-linux-musl/release/websocat
