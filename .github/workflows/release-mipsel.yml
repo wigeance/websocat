@@ -1,4 +1,4 @@
-name: Build websocat (mipsel with nightly Rust)
+name: Build websocat (mipsel, Rust nightly 1.80)
 
 on:
   workflow_dispatch:
@@ -18,18 +18,16 @@ jobs:
           ls -la
           find . -name Cargo.toml
 
-      - name: Install Rust nightly
+      - name: Install Rust nightly 1.80
         run: |
-          rustup toolchain install nightly
-          rustup target add mipsel-unknown-linux-musl --toolchain nightly
+          rustup toolchain install nightly-2024-04-01
+          rustup target add mipsel-unknown-linux-musl --toolchain nightly-2024-04-01
 
       - name: Fetch dependencies
-        run: cargo fetch
+        run: cargo +nightly-2024-04-01 fetch
 
       - name: Build release
-        env:
-          CARGO_TERM_COLOR: always
-        run: cargo +nightly build --release --target mipsel-unknown-linux-musl -Z build-std=core,alloc,std,proc_macro
+        run: cargo +nightly-2024-04-01 build --release --target mipsel-unknown-linux-musl -Z build-std=core,alloc,std,proc_macro
 
       - name: Inspect binary
         run: |
