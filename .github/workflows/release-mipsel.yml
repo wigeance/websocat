@@ -16,10 +16,11 @@ jobs:
           fetch-depth: 0
 
       # 2️⃣ Проверяем структуру проекта
-      - name: Verify project structure
+      - name: Show project structure
         run: |
           pwd
           ls -la
+          ls -la websocat || true
 
       # 3️⃣ Устанавливаем nightly Rust (нужен для -Z build-std)
       - name: Setup nightly Rust
@@ -27,7 +28,7 @@ jobs:
         with:
           components: rust-src
 
-      # 4️⃣ Устанавливаем cross (последняя dev версия)
+      # 4️⃣ Устанавливаем cross
       - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross --force
 
@@ -42,10 +43,13 @@ jobs:
 
       # 6️⃣ Собираем websocat под mipsel с vendored OpenSSL
       - name: Build release (mipsel, vendored OpenSSL)
-        working-directory: websocat   # <-- если Cargo.toml в подкаталоге websocat
         env:
           CROSS_NO_WARNINGS: 1
-        run: cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro
+        run: |
+          # Если Cargo.toml в корне, используем так:
+          cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro
+          # Если Cargo.toml в подкаталоге `websocat`, раскомментируйте и используйте:
+          # cross build --release --target mipsel-unknown-linux-musl --features=vendored-openssl -Z build-std=std,core,alloc,proc_macro --manifest-path websocat/Cargo.toml
 
       # 7️⃣ Проверяем бинарник
       - name: Inspect binary
