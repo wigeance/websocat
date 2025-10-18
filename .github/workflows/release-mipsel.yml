@@ -1,4 +1,4 @@
-name: Build websocat (mipsel via cross build-std)
+name: Build websocat (mipsel nightly via cross)
 
 on:
   workflow_dispatch:
@@ -9,18 +9,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
 
-      - name: Install latest cross (dev branch)
-        run: |
-          cargo install --git https://github.com/cross-rs/cross cross --force
-          cross --version
+      - name: Install cross (latest dev)
+        run: cargo install cross --git https://github.com/cross-rs/cross --force
 
-      - name: Write Cross.toml
+      - name: Create Cross.toml
         run: |
           cat > Cross.toml <<'EOF'
           [target.mipsel-unknown-linux-musl]
@@ -28,15 +28,10 @@ jobs:
           build-std = ["core", "alloc", "std", "proc_macro"]
           EOF
 
-      - name: Show Cargo metadata (debug aid)
-        run: cargo metadata --no-deps
-
-      - name: Build release (mipsel)
+      - name: Build for MIPSEL (nightly)
         env:
-          CROSS_DEBUG: 1
           CROSS_NO_WARNINGS: 1
-        run: |
-          cross build --release --target mipsel-unknown-linux-musl
+        run: cross build --release --target mipsel-unknown-linux-musl -Z build-std=std,core,alloc,proc_macro
 
       - name: Inspect result
         run: |
